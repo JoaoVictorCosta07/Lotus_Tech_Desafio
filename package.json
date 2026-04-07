@@ -1,0 +1,27 @@
+{
+  "name": "lotus_tech_desafio",
+  "version": "1.0.0",
+  "description": "projeto do processo seletivo da Lotus Tech",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/JoaoVictorCosta07/Lotus_Tech_Desafio.git"
+  },
+  "author": "João Victor da Costa Reis",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/JoaoVictorCosta07/Lotus_Tech_Desafio/issues"
+  },
+  "homepage": "https://github.com/JoaoVictorCosta07/Lotus_Tech_Desafio#readme",
+  "dependencies": {
+    "express": "^5.2.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.14"
+  }
+}
