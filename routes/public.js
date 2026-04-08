@@ -2,6 +2,7 @@ import express from 'express'
 import bcrypt from 'bcrypt'
 import jwt from 'jsonwebtoken'
 import { PrismaClient } from '@prisma/client'
+import blacklist from '../blacklist.js'
 
 const prisma = new PrismaClient
 const router = express.Router()
@@ -52,6 +53,20 @@ router.post('/login', async (req, res) => {
     } catch(err){
         res.status(500).json({message:"Erro no servidor, tente novamente"})
     }
+})
+
+router.post('/logout', async(req,res) => {
+    try{
+        const token = req.headers.authorization
+
+        if (token) {
+            blacklist.add(token);
+        }
+        res.status(200).json({ message: "Logout realizado" });
+    } catch(err){
+        res.status(500).json({message:"Erro no servidor, tente novamente"})
+    }
+
 })
 
 export default router

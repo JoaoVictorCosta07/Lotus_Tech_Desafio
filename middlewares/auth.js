@@ -1,4 +1,5 @@
 import jwt from 'jsonwebtoken'
+import blacklist from '../blacklist.js'
 
 const JWT_SECRET = process.env.JWT_SECRET
 
@@ -7,6 +8,10 @@ const auth = (req, res, next) =>{
 
     if (!token){
         res.status(401).json({message:"Acesso negado"})
+    }
+
+    if (blacklist.has(token)){
+        res.status(401).json({message:"Token inválido (logout)"})
     }
 
     try{
