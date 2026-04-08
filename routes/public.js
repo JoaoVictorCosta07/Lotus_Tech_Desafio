@@ -6,6 +6,9 @@ import { PrismaClient } from '@prisma/client'
 const prisma = new PrismaClient
 const router = express.Router()
 
+const JWT_SECRET = process.env.JWT_SECRET
+
+//Rota de Cadastro | esperado: name, email, password
 router.post('/register', async (req, res) => {
     try{
         const user = req.body
@@ -25,6 +28,29 @@ router.post('/register', async (req, res) => {
     } catch(err){
         console.log(err)
         res.status(500).json({message:'Erro no servidor, tente novamente'})
+    }
+})
+
+//Rota de Login | esperado: email, password
+router.post('/login', async (req, res) => {
+    try{
+        const userInfo = req.body
+
+        const user = await prisma.user.findUnique({
+            where: {email: userInfo.email}
+        })
+
+        const isMatch = await bcrypt.compare(userInfo.password, user.password)
+        if (!isMatch){
+            res.status(400).json({message:"Senha inválida"})
+        }
+
+        const token = jwt.sign({id: user.id}, JWT_SECRET, {expiresIn: "1d"})
+
+        res.status(200).json(token)
+
+    } catch(err){
+        res.status(500).json({message:"Erro no servidor, tente novamente"})
     }
 })
 
