@@ -32,7 +32,6 @@ router.post('/register', async (req, res) => {
 
         res.status(201).json(userDB)
     } catch(err){
-        console.log(err)
         res.status(500).json({message:'Erro no servidor, tente novamente'})
     }
 })
@@ -79,7 +78,7 @@ router.post('/logout', async(req,res) => {
 
 })
 
-router.post('/me', auth, async (req, res) => {
+router.get('/me', auth, async (req, res) => {
     try {
         const user = await prisma.user.findUnique({
             where: { id: req.user.id },
