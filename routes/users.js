@@ -2,8 +2,7 @@ import express from 'express'
 
 const router = express.Router()
 
-//Rota de Cadastro | esperado: name, email, password
-router.get('/users', async (req, res) => {
+router.get('/', async (req, res) => {
     try{
         res.status(200).json({message: "Logado com sucesso"})
     } catch(err){
