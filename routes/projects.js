@@ -75,5 +75,35 @@ router.get('/:id', async (req, res) => {
     }
 })
 
+router.delete('/:id', async (req, res) => {
+    try {
+        const {id} = req.params
+
+        const foundProject = await prisma.project.findUnique({
+            where: {
+                id: id
+            }
+        })
+
+        console.log(foundProject)
+
+        if (!foundProject){
+            return res.status(404).json({message: "Projeto não encontrado"})
+        }
+
+        if (req.user.id !== foundProject.user_id) {
+            return res.status(403).json({ message: "Você não tem autorização para deletar esse projeto" })
+        }
+
+        await prisma.project.delete({
+            where: { id: id }
+        })
+
+        return res.status(201).json({message: "Projeto deletado com sucesso"})
+    } catch(err){
+        return res.status(500).json({message: "Erro no servidor, tente novamente"})
+    }
+})
+
 export default router
     
