@@ -1,6 +1,7 @@
 import express from 'express'
 import authRoutes from './routes/auth.js'
 import usersRoutes from './routes/users.js'
+import projectsRoutes from './routes/projects.js'
 
 import auth from './middlewares/auth.js'
 
@@ -10,5 +11,6 @@ app.use(express.json())
 
 app.use('/auth', authRoutes)
 app.use('/users', auth, usersRoutes)
+app.use('/projects', auth, projectsRoutes)
 
 app.listen(PORT, () => console.log(`servidor rodando na porta ${PORT}`))

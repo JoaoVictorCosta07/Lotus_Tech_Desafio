@@ -19,3 +19,38 @@ model User {
   email String @unique
   password String
 }
+
+model Project {
+  id          String    @id @default(auto()) @map("_id") @db.ObjectId
+  user_id     String    @db.ObjectId
+  name        String
+  description String
+  shared      Boolean   @default(false)
+  deadline    DateTime
+  created_at  DateTime  @default(now())
+  updated_at  DateTime  @updatedAt
+}
+
+model Task {
+  id          String    @id @default(auto()) @map("_id") @db.ObjectId
+  project_id  String    @db.ObjectId
+  title       String
+  description String
+  status      Status    @default(pending)
+  priority    Priority  @default(medium)
+  due_date    DateTime
+  created_at  DateTime  @default(now())
+  updated_at  DateTime  @updatedAt
+}
+
+enum Status {
+  pending
+  in_progress
+  done
+}
+
+enum Priority {
+  low
+  medium
+  high
+}
