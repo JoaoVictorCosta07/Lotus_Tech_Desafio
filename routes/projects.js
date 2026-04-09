@@ -30,5 +30,50 @@ router.post('/', async (req, res) => {
     }
 })
 
+router.get('/', async (req, res) => {
+    try{
+        const userId = req.user.id
+
+        const userProjects = await prisma.project.findMany({
+            where:{
+                user_id: userId
+            }
+        })
+
+        if (userProjects.length === 0){
+            return res.status(404).json({message:'Esse usuário não tem projetos ativos'})
+        }
+
+        return res.status(200).json(userProjects)
+    } catch(err){
+        console.log(err)
+        return res.status(500).json({message:'Erro no servidor, tente novamente'})
+    }
+})
+
+router.get('/:id', async (req, res) => {
+    try{
+        const {id} = req.params
+
+        const foundProject = await prisma.project.findUnique({
+            where: {id: id},
+        })
+
+        console.log(foundProject)
+        console.log(req.user.id)
+        console.log(foundProject.user_id)
+        console.log(foundProject.shared)
+
+        if(foundProject.shared === false && req.user.id != foundProject.user_id){
+            return res.status(403).json({message: "Você não tem autorização de ver esse projeto"})
+        }
+
+        return res.status(200).json(foundProject)
+        
+    } catch(err){
+        return res.status(500).json({message:'Erro no servidor, tente novamente'})
+    }
+})
+
 export default router
     
