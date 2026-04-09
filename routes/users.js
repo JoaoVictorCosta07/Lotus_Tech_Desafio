@@ -55,4 +55,24 @@ router.delete('/:id', async (req, res) => {
     }
 })
 
+router.put('/:id', async (req, res) => {
+    try{
+        const {id} = req.params
+        const newUser = req.body
+
+        const updateUser = await prisma.user.update({
+            where: {id: id},
+            data: {
+                name: newUser.name,
+                email: newUser.email
+            }
+        })
+
+        
+        res.status(201).json(updateUser)
+    } catch(err){
+        return res.status(500).json({message: "Erro no servidor, tente novamente"})
+    }
+})
+
 export default router
