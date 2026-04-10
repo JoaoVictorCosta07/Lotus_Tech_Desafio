@@ -5,24 +5,24 @@ const prisma = new PrismaClient
 const router = express.Router()
 
 router.post('/', async (req, res) => {
-    try{
+    try {
         const task = req.body
 
-        if (!task){
-            return res.status(400).json({message:'Você não enviou uma tarefa'})
-        }
-        const foundProject = await prisma.project.findUnique({
-            where:{
-                id: task.project_id
-            }
-        })
-        
-        if (!foundProject){
-            return res.status(404).json({message:'Projeto não encontrado'})
+        if (!task || Object.keys(task).length === 0) {
+            return res.status(400).json({ message: 'Você não enviou uma tarefa' })
         }
 
-        if (foundProject.user_id != req.user.id && foundProject.shared == false){
-            return res.status(403).json({message:'Você não tem permissões de criar tarefas para esse projeto'})
+        const foundProject = await prisma.project.findUnique({
+            where: { id: task.project_id }
+        })
+
+        if (!foundProject) {
+            return res.status(404).json({ message: 'Projeto não encontrado' })
+        }
+
+        // Bloqueia se o projeto não é shared E o usuário não é o dono
+        if (foundProject.shared === false && foundProject.user_id !== req.user.id) {
+            return res.status(403).json({ message: 'Você não tem permissões de criar tarefas para esse projeto' })
         }
 
         const newTask = await prisma.task.create({
@@ -37,19 +37,17 @@ router.post('/', async (req, res) => {
         })
 
         return res.status(201).json(newTask)
-        
-    } catch(err){
+
+    } catch(err) {
         console.log(err)
-        return res.status(500).json({message:'Erro no servidor, tente novamente'})
+        return res.status(500).json({ message: 'Erro no servidor, tente novamente' })
     }
 })
 
 router.get('/', async (req, res) => {
     try {
         const userProjects = await prisma.project.findMany({
-            where: {
-                user_id: req.user.id
-            }
+            where: { user_id: req.user.id }
         })
 
         if (userProjects.length === 0) {
@@ -76,35 +74,55 @@ router.get('/', async (req, res) => {
 })
 
 router.get('/:id', async (req, res) => {
-    try{
-        const {id} = req.params
+    try {
+        const { id } = req.params
 
         const foundTask = await prisma.task.findUnique({
-            where: {id: id},
+            where: { id: id }
         })
+
+        if (!foundTask) {
+            return res.status(404).json({ message: 'Tarefa não encontrada' })
+        }
 
         const taskProject = await prisma.project.findUnique({
-            where: {id: foundTask.project_id}
+            where: { id: foundTask.project_id }
         })
 
-        if (taskProject.shared === false && req.user.id !== taskProject.user_id){
-            return res.status(403).json({message: "Você não tem autorização de ver essa tarefa"})
+        if (taskProject.shared === false && req.user.id !== taskProject.user_id) {
+            return res.status(403).json({ message: 'Você não tem autorização de ver essa tarefa' })
         }
 
         return res.status(200).json(foundTask)
-        
-    } catch(err){
-        return res.status(500).json({message:'Erro no servidor, tente novamente'})
+
+    } catch(err) {
+        return res.status(500).json({ message: 'Erro no servidor, tente novamente' })
     }
 })
 
 router.put('/:id', async (req, res) => {
-    try{
-        const {id} = req.params
+    try {
+        const { id } = req.params
         const newTask = req.body
 
-        const updateTask = await prisma.task.update({
-            where: {id: id},
+        const foundTask = await prisma.task.findUnique({
+            where: { id: id }
+        })
+
+        if (!foundTask) {
+            return res.status(404).json({ message: 'Tarefa não encontrada' })
+        }
+
+        const taskProject = await prisma.project.findUnique({
+            where: { id: foundTask.project_id }
+        })
+
+        if (req.user.id !== taskProject.user_id) {
+            return res.status(403).json({ message: 'Você não tem autorização para editar essa tarefa' })
+        }
+
+        const updatedTask = await prisma.task.update({
+            where: { id: id },
             data: {
                 project_id: newTask.project_id,
                 title: newTask.title,
@@ -114,54 +132,77 @@ router.put('/:id', async (req, res) => {
                 due_date: newTask.due_date
             }
         })
-        
-        res.status(201).json(updateTask)
-    } catch(err){
+
+        return res.status(200).json(updatedTask)
+
+    } catch(err) {
         console.log(err)
-        return res.status(500).json({message: "Erro no servidor, tente novamente"})
+        return res.status(500).json({ message: 'Erro no servidor, tente novamente' })
     }
 })
 
 router.patch('/:id/status', async (req, res) => {
-    try{
-        const {id} = req.params
+    try {
+        const { id } = req.params
         const newTask = req.body
 
-        const updateTask = await prisma.task.update({
-            where: {id: id},
-            data: {
-                status: newTask.status
-            }
+        const foundTask = await prisma.task.findUnique({
+            where: { id: id }
         })
-        
-        res.status(201).json(updateTask)
-    } catch(err){
+
+        if (!foundTask) {
+            return res.status(404).json({ message: 'Tarefa não encontrada' })
+        }
+
+        const taskProject = await prisma.project.findUnique({
+            where: { id: foundTask.project_id }
+        })
+
+        if (req.user.id !== taskProject.user_id) {
+            return res.status(403).json({ message: 'Você não tem autorização para editar essa tarefa' })
+        }
+
+        const updatedTask = await prisma.task.update({
+            where: { id: id },
+            data: { status: newTask.status }
+        })
+
+        return res.status(200).json(updatedTask)
+
+    } catch(err) {
         console.log(err)
-        return res.status(500).json({message: "Erro no servidor, tente novamente"})
+        return res.status(500).json({ message: 'Erro no servidor, tente novamente' })
     }
 })
 
 router.delete('/:id', async (req, res) => {
     try {
-        const {id} = req.params
+        const { id } = req.params
 
         const foundTask = await prisma.task.findUnique({
-            where: {
-                id: id
-            }
-        })  
+            where: { id: id }
+        })
 
-        if (!foundTask){
-            return res.status(404).json({message: "Tarefa não encontrada"})
+        if (!foundTask) {
+            return res.status(404).json({ message: 'Tarefa não encontrada' })
+        }
+
+        const taskProject = await prisma.project.findUnique({
+            where: { id: foundTask.project_id }
+        })
+
+        if (req.user.id !== taskProject.user_id) {
+            return res.status(403).json({ message: 'Você não tem autorização para deletar essa tarefa' })
         }
 
         await prisma.task.delete({
             where: { id: id }
         })
 
-        return res.status(201).json({message: "Tarefa deletada com sucesso"})
-    } catch(err){
-        return res.status(500).json({message: "Erro no servidor, tente novamente"})
+        return res.status(200).json({ message: 'Tarefa deletada com sucesso' })
+
+    } catch(err) {
+        return res.status(500).json({ message: 'Erro no servidor, tente novamente' })
     }
 })
 
