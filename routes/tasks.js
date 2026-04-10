@@ -46,6 +46,8 @@ router.post('/', async (req, res) => {
 
 router.get('/', async (req, res) => {
     try {
+        const { status, priority, project_id, due_date } = req.query
+
         const userProjects = await prisma.project.findMany({
             where: { user_id: req.user.id }
         })
@@ -56,10 +58,26 @@ router.get('/', async (req, res) => {
 
         const projectIds = userProjects.map(project => project.id)
 
-        const tasks = await prisma.task.findMany({
-            where: {
-                project_id: { in: projectIds }
+        const filters = {
+            project_id: { in: projectIds }
+        }
+
+        if (status) {
+            filters.status = status
+        }
+
+        if (priority) {
+            filters.priority = priority
+        }
+
+        if (due_date) {
+            filters.due_date = {
+                lte: new Date(due_date)
             }
+        }
+
+        const tasks = await prisma.task.findMany({
+            where: filters
         })
 
         if (tasks.length === 0) {
