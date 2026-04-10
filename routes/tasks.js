@@ -44,4 +44,35 @@ router.post('/', async (req, res) => {
     }
 })
 
+router.get('/', async (req, res) => {
+    try {
+        const userProjects = await prisma.project.findMany({
+            where: {
+                user_id: req.user.id
+            }
+        })
+
+        if (userProjects.length === 0) {
+            return res.status(404).json({ message: 'Nenhum projeto encontrado para esse usuário' })
+        }
+
+        const projectIds = userProjects.map(project => project.id)
+
+        const tasks = await prisma.task.findMany({
+            where: {
+                project_id: { in: projectIds }
+            }
+        })
+
+        if (tasks.length === 0) {
+            return res.status(404).json({ message: 'Nenhuma tarefa encontrada' })
+        }
+
+        return res.status(200).json(tasks)
+
+    } catch(err) {
+        return res.status(500).json({ message: 'Erro no servidor, tente novamente' })
+    }
+})
+
 export default router
