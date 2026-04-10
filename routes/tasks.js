@@ -98,5 +98,29 @@ router.get('/:id', async (req, res) => {
     }
 })
 
+router.put('/:id', async (req, res) => {
+    try{
+        const {id} = req.params
+        const newTask = req.body
+
+        const updateTask = await prisma.task.update({
+            where: {id: id},
+            data: {
+                project_id: newTask.project_id,
+                title: newTask.title,
+                description: newTask.description,
+                status: newTask.status,
+                priority: newTask.priority,
+                due_date: newTask.due_date
+            }
+        })
+        
+        res.status(201).json(updateTask)
+    } catch(err){
+        console.log(err)
+        return res.status(500).json({message: "Erro no servidor, tente novamente"})
+    }
+})
+
 
 export default router
