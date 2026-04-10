@@ -141,5 +141,28 @@ router.patch('/:id/status', async (req, res) => {
     }
 })
 
+router.delete('/:id', async (req, res) => {
+    try {
+        const {id} = req.params
+
+        const foundTask = await prisma.task.findUnique({
+            where: {
+                id: id
+            }
+        })  
+
+        if (!foundTask){
+            return res.status(404).json({message: "Tarefa não encontrada"})
+        }
+
+        await prisma.task.delete({
+            where: { id: id }
+        })
+
+        return res.status(201).json({message: "Tarefa deletada com sucesso"})
+    } catch(err){
+        return res.status(500).json({message: "Erro no servidor, tente novamente"})
+    }
+})
 
 export default router
