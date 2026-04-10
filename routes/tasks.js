@@ -75,4 +75,28 @@ router.get('/', async (req, res) => {
     }
 })
 
+router.get('/:id', async (req, res) => {
+    try{
+        const {id} = req.params
+
+        const foundTask = await prisma.task.findUnique({
+            where: {id: id},
+        })
+
+        const taskProject = await prisma.project.findUnique({
+            where: {id: foundTask.project_id}
+        })
+
+        if (taskProject.shared === false && req.user.id !== taskProject.user_id){
+            return res.status(403).json({message: "Você não tem autorização de ver essa tarefa"})
+        }
+
+        return res.status(200).json(foundTask)
+        
+    } catch(err){
+        return res.status(500).json({message:'Erro no servidor, tente novamente'})
+    }
+})
+
+
 export default router
