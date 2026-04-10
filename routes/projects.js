@@ -35,10 +35,14 @@ router.get('/', async (req, res) => {
         const userId = req.user.id
 
         const userProjects = await prisma.project.findMany({
-            where:{
-                user_id: userId
+            where: {
+                OR: [
+                    { user_id: req.user.id },
+                    { shared: true }
+                ]
             }
         })
+
 
         if (userProjects.length === 0){
             return res.status(404).json({message:'Esse usuário não tem projetos ativos'})
