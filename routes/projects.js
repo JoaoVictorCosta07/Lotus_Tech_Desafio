@@ -138,4 +138,35 @@ router.delete('/:id', async (req, res) => {
     }
 })
 
+router.get('/:id/tasks', async (req, res) => {
+    try {
+        const { id } = req.params
+
+        const foundProject = await prisma.project.findUnique({
+            where: { id: id },
+        })
+
+        if (!foundProject) {
+            return res.status(404).json({ message: "Projeto não localizado" })
+        }
+
+        if (foundProject.shared === false && req.user.id !== foundProject.user_id) {
+            return res.status(403).json({ message: "Acesso negado: este projeto é privado" })
+        }
+
+        const foundTasks = await prisma.task.findMany({
+            where: {project_id: foundProject.id}
+        })
+
+        if (foundTasks.length === 0) {
+            return res.status(404).json({ message: 'Nenhuma tarefa encontrada para esse projeto' })
+        }
+
+        return res.status(200).json(foundTasks)
+        
+    } catch (err) {
+        return res.status(500).json({ message: 'Erro ao processar a requisição do projeto' })
+    }
+})
+
 export default router
