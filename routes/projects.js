@@ -169,4 +169,38 @@ router.get('/:id/tasks', async (req, res) => {
     }
 })
 
+router.get('/:id/summary', async (req, res) => {
+    try {
+        const { id } = req.params
+        
+        const foundProject = await prisma.project.findUnique({
+            where: {id: id}
+        })
+
+        if (!foundProject) {
+            return res.status(404).json({ message: 'Projeto não encontrado'})
+        }
+
+        if (foundProject.shared == false && foundProject.user_id !== req.user.id) {
+            return res.status(403).json({message: 'Você não tem permissão de acessar esse projeto'})
+        }
+
+        const tasks = await prisma.task.findMany({
+            where: {project_id: id}
+        })
+
+        const summary = {
+            total: tasks.length,
+            pending: tasks.filter(task => task.status === 'pending').length,
+            in_progress: tasks.filter(task => task.status === 'in_progress').length,
+            done: tasks.filter(task => task.status === 'done').length
+        }
+
+        return res.status(200).json(summary)
+
+    } catch(err) {
+        return res.status(500).json({ message: 'Erro ao processar a requisição do projeto' })
+    }
+})
+
 export default router
