@@ -9,7 +9,11 @@ router.post('/', async (req, res) => {
         const task = req.body
 
         if (!task || Object.keys(task).length === 0) {
-            return res.status(400).json({ message: 'Você não enviou uma tarefa' })
+            return res.status(400).json({ message: 'Corpo da requisição vazio. Envie os dados da tarefa.' })
+        }
+
+        if (!task.project_id || !task.title) {
+            return res.status(400).json({ message: 'Dados incompletos: project_id e title são obrigatórios.' })
         }
 
         const foundProject = await prisma.project.findUnique({
@@ -17,12 +21,11 @@ router.post('/', async (req, res) => {
         })
 
         if (!foundProject) {
-            return res.status(404).json({ message: 'Projeto não encontrado' })
+            return res.status(404).json({ message: 'Projeto da tarefa não encontrado no sistema.' })
         }
 
-        // Bloqueia se o projeto não é shared E o usuário não é o dono
         if (foundProject.shared === false && foundProject.user_id !== req.user.id) {
-            return res.status(403).json({ message: 'Você não tem permissões de criar tarefas para esse projeto' })
+            return res.status(403).json({ message: 'Permissão negada: este projeto é privado e não pertence a você.' })
         }
 
         const newTask = await prisma.task.create({
@@ -39,21 +42,21 @@ router.post('/', async (req, res) => {
         return res.status(201).json(newTask)
 
     } catch(err) {
-        console.log(err)
-        return res.status(500).json({ message: 'Erro no servidor, tente novamente' })
+        console.error(err)
+        return res.status(500).json({ message: 'Erro interno ao processar a criação da tarefa. Tente novamente mais tarde.' })
     }
 })
 
 router.get('/', async (req, res) => {
     try {
-        const { status, priority, project_id, due_date } = req.query
+        const { status, priority, due_date } = req.query
 
         const userProjects = await prisma.project.findMany({
             where: { user_id: req.user.id }
         })
 
         if (userProjects.length === 0) {
-            return res.status(404).json({ message: 'Nenhum projeto encontrado para esse usuário' })
+            return res.status(404).json({ message: 'Não foram encontrados projetos vinculados ao seu usuário.' })
         }
 
         const projectIds = userProjects.map(project => project.id)
@@ -62,18 +65,10 @@ router.get('/', async (req, res) => {
             project_id: { in: projectIds }
         }
 
-        if (status) {
-            filters.status = status
-        }
-
-        if (priority) {
-            filters.priority = priority
-        }
-
+        if (status) filters.status = status
+        if (priority) filters.priority = priority
         if (due_date) {
-            filters.due_date = {
-                lte: new Date(due_date)
-            }
+            filters.due_date = { lte: new Date(due_date) }
         }
 
         const tasks = await prisma.task.findMany({
@@ -81,13 +76,13 @@ router.get('/', async (req, res) => {
         })
 
         if (tasks.length === 0) {
-            return res.status(404).json({ message: 'Nenhuma tarefa encontrada' })
+            return res.status(404).json({ message: 'Nenhuma tarefa corresponde aos filtros aplicados.' })
         }
 
         return res.status(200).json(tasks)
 
     } catch(err) {
-        return res.status(500).json({ message: 'Erro no servidor, tente novamente' })
+        return res.status(500).json({ message: 'Erro ao listar tarefas. Verifique os parâmetros enviados.' })
     }
 })
 
